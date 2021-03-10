@@ -3,6 +3,7 @@
 <head>
     <title>ScEViz</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.18.0/cytoscape.min.js" integrity="sha512-bg1QBgIk64XNmh8qAaxY2W6TKZ4/Q2sbPQLJ+1vhT3BD+DXXzAqhIbWdgeM82XWcbJKblEoSNhXiakf1NlWU3g==" crossorigin="anonymous"></script>
+    
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css')}}">
 </head>
 
@@ -14,69 +15,7 @@
     </header>
 
     <div id="cy"></div>
-    <script>
-        var cy = cytoscape({
-            container: document.getElementById('cy'),
-            elements: [
-// nodes
-{ data: { id: 'a' } },
-{ data: { id: 'b' } },
-{ data: { id: 'c' } },
-{ data: { id: 'd' } },
-{ data: { id: 'e' } },
-{ data: { id: 'f' } },
-// edges
-{
-data: {
-  id: 'ab',
-  source: 'a',
-  target: 'b'
-}
-},
-{
-data: {
-  id: 'cd',
-  source: 'c',
-  target: 'd'
-}
-},
-{
-data: {
-  id: 'ef',
-  source: 'e',
-  target: 'f'
-}
-},
-{
-data: {
-  id: 'ac',
-  source: 'a',
-  target: 'c'
-}
-},
-{
-data: {
-  id: 'be',
-  source: 'b',
-  target: 'e'
-}
-}
-],
-            layout: {
-                name: 'grid'
-            },
-            style: [
-                {
-                    selector: 'node',
-                    style: {
-                        shape: 'circle',
-                        'background-color': 'rgb(77, 233, 77)',
-                        label: 'data(id)'
-                    }
-                }
-            ]
-        });
-    </script>
+    <script src="{{ url_for('static', filename='cyto.js') }}"></script>
 </body>
 
 </html>

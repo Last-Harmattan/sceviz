@@ -51,9 +51,8 @@ def create_edge(id: str, source: str, target: str) -> dict:
         Parameters
         ----------
         id : str
-            Unique identifier. This is required by Cytoscape for further
-            referenceing, however, since that isn't required here we
-            supply a meaningless autoincremeted number.
+            Unique ID consisting of the parents ID and the last part of the
+            child's ID
         source : str
             ID of the edge starting-node
         target : str
@@ -67,7 +66,7 @@ def create_edge(id: str, source: str, target: str) -> dict:
         Notes
         -----
         Edge: A---->B:
-            { data: { id: 'AB', source: 'A', target: 'B'  } }
+            { data: { id: 'A->B', source: 'A', target: 'B'  } }
     """
 
     return { 'data': { 'id': id, 'source': source, 'target': target } } 

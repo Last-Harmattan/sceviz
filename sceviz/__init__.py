@@ -22,8 +22,8 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    @app.route('/')
-    def index():
-        return render_template('base.html')
+    from . import index
+    app.register_blueprint(index.bp)
+    app.add_url_rule('/',endpoint='index')
 
     return app

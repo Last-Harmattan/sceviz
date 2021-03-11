@@ -3,7 +3,8 @@
 <head>
     <title>ScEViz</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.18.0/cytoscape.min.js" integrity="sha512-bg1QBgIk64XNmh8qAaxY2W6TKZ4/Q2sbPQLJ+1vhT3BD+DXXzAqhIbWdgeM82XWcbJKblEoSNhXiakf1NlWU3g==" crossorigin="anonymous"></script>
-    
+    <script src="https://unpkg.com/dagre@0.7.4/dist/dagre.js"></script>
+    <script src="{{ url_for('static', filename = 'node_modules/cytoscape-dagre/cytoscape-dagre.js') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css')}}">
 </head>
 
@@ -15,7 +16,30 @@
     </header>
 
     <div id="cy"></div>
-    <script src="{{ url_for('static', filename='cyto.js') }}"></script>
+    <script>
+        var schema = JSON.parse('{{ schema | tojson }}');
+
+        var cy = cytoscape({
+        container: document.getElementById('cy'),
+        elements: schema,
+        // styling and layout
+        layout: {
+            name: 'dagre',
+            rankDir: 'LR'
+        },
+        style: [
+            {
+                selector: 'node',
+                style: {
+                    shape: 'circle',
+                    'background-color': 'green',
+                    label: 'data(label)'
+                }
+            }
+        ]
+        });
+    </script>
+    
 </body>
 
 </html>

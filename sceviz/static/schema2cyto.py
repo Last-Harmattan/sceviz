@@ -1,6 +1,9 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #Reads JSON-Schema and converts it to Cytoscape.js format
 
 import json
+from itertools import count
 from pprint import pprint
 
 def load_schema(path: str) -> dict:
@@ -20,17 +23,15 @@ def load_schema(path: str) -> dict:
         schema = json.load(file)
         return schema
 
-def create_node(id: str, label: str = None, type: str = None) -> dict:
+def create_node(id: str, label: str = None) -> dict:
     """Creates a Cytoscape node
         
         Parameters
         ----------
         id : str
-            Unique identifier in the form of an absolute path to that node
+            Unique identifier in the form of an absolute path to that node     
         label : str, optional
             A name for displaying
-        type : str, optional
-            Type of the element (string,boolean,...)
             
         Returns
         -------
@@ -40,9 +41,9 @@ def create_node(id: str, label: str = None, type: str = None) -> dict:
         Notes
         -----
         Cytoscape format:
-            { data: { id: 1, ... } }
+            { data: { id: 1, label: 'some label' } }
     """
-    return { 'data': { 'id': id, 'label': label, 'type': type } }
+    return { 'data': { 'id': id, 'label': label } }
 
 def create_edge(id: str, source: str, target: str) -> dict:
     """Creates a Cytoscape edge
@@ -73,7 +74,8 @@ def create_edge(id: str, source: str, target: str) -> dict:
 
     
 
-def parse_schema(schema: dict, parent: str = "#", data: list = []) -> list:
+def parse_schema(schema: dict, parent: str = "#",
+                data: list = [], index: str = "") -> list:
     """Takes JSON-Schema and converts it to cytoscape format
         
         Parameters
@@ -84,33 +86,45 @@ def parse_schema(schema: dict, parent: str = "#", data: list = []) -> list:
             The parent node of the current layer. used for creating unique ids
         data : list, optional
             List for storing the Cytoscape data. Is returned at the end
+        index : str, optional
+            Used for ensuring uniqueness in arrays
 
         Returns
         -------
         list of dict
             A list dictionaries conforming to the Cytoscape format.
     """
+    if not data:
+        #Data is empty i.e. current node is root
+        try:
+            #Use specific title if given
+            data.append(create_node('#',schema['title']))
+        except KeyError:
+            #and generic if not
+            data.append(create_node('#','root'))
+
     for key, value in schema.items():
-        #For paths we need to identify the parent node thus every
-        #node receives its path as an id
-        id = parent + '/' + key
-        edge_id = parent.split('/')[-1] + '-' + key
-        if isinstance(value,dict):
-            #Value is complex i.e. needs further traversal
-            #Check whether value is a JSON-object
-            if 'properties' in value:
-                data.append(create_node(id,key,value['type']))
-                data.append(create_edge(edge_id,parent,id))
-                parse_schema(value['properties'],id,data)
-            else:
-                #Value isn't an object i.e. we've reached a leaf
-                data.append(create_node(id,key,value['type']))
-                data.append(create_edge(edge_id,parent,id))
-
+        #Referencing requires unique id for nodes, we use the path from root
+        id = parent + '/' + key + index
+        edge_id = parent + '->' + key
+        
+        if isinstance(value, dict):
+            #If the child node is a dict we can call parse_schema() recursivly
+            data.append(create_node(id,key))
+            data.append(create_edge(edge_id,parent,id))
+            parse_schema(value,id,data)
+        elif isinstance(value, list):
+            #If the child node is a list we have to handle that differently
+            #depending on the list's items' type
+            data.append(create_node(id,key))
+            data.append(create_edge(edge_id,parent,id))
+            #Arrays can lead to redundant ids and thus we number them to ensure
+            #uniqueness.
+            for elem in enumerate(value):
+                if isinstance(elem[1], dict):
+                    parse_schema(elem[1],id,data,str(elem[0]))
         else:
-            
+            data.append(create_node(id,key))
+            data.append(create_edge(edge_id,parent,id))
 
-    return data
-
-if __name__ == '__main__':
-    pprint(parse_schema(load_schema('schema.json')))
+    return json.dumps(data,indent=4,sort_keys=True)

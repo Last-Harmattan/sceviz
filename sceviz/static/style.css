@@ -1,32 +1,57 @@
+.color-1 {color: #81c784;}
+.color-2 {color: #52be80;}
+.color-3 {color: #27ae60;}
+.color-4 {color: #f2f4f4;}
+.color-5 {color: #f4f6f6;}
+.color-6 {color: #eaeded;}
+
+@import url('https://fonts.googleapis.com/css2?family=Geo&display=swap');
+
 html { font-family: sans-serif; background: #eee; height: 100%;}
 body { height: 100%; background: white; margin: 0;}
-nav { background-color: rgb(77, 233, 77); top: 0%; width: 100%;}
-nav h1 { font-family: sans-serif; color: white; margin: 0;}
-#cy {
+nav { background-color: #27ae60; top: 0%; width: 100%;}
+nav h1 { font-family: sans-serif; color:#5a5a5a6e; margin: 0;}
+.cy {
     width: 100%;
     height: 100%;
 }
 .grid-container {
     display: grid;
     height: 100%;
-    grid-template-columns: 100%;
+    grid-template-columns: 15% 1fr 1fr 2px 1fr 1fr;
     grid-template-rows: auto 1fr auto;
 }
 .header {
-    grid-column: 1;
+    grid-column: 1 / span 6;
     grid-row: 1;
-    background-color: rgb(77, 233, 77);
-    color: white;
-    font-weight: bold;
-    font-size: 20pt;
+    background-color: #27ae60;
+    color:#f2f4f4;
+    font-size: 30pt;
+    font-family: 'Geo', sans-serif;
 }
-.schema {
+.schema-left {
+    grid-column: 2 / span 2;
+    grid-row: 2;
+}
+.schema-right {
+    grid-column: 5 / span 2;
+    grid-row: 2;
+}
+.divline {
+    background-color: grey;
+    grid-column: 4;
+    grid-row: 2;
+}
+
+.side-bar {
+    background-color: #eaeded;
     grid-column: 1;
     grid-row: 2;
 }
+
 .footer {
-    grid-column: 1;
+    grid-column: 1 / span 6;
     grid-row: 3;
-    background-color: rgb(77, 233, 77);
+    background-color: #27ae60;
     color: white;
 }

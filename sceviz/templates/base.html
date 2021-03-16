@@ -6,6 +6,12 @@
     <script src="https://unpkg.com/dagre@0.7.4/dist/dagre.js"></script>
     <script src="{{ url_for('static', filename = 'node_modules/cytoscape-dagre/cytoscape-dagre.js') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css')}}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename = 'icons/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename = 'icons/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename = 'icons/favicon-16x16.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename = 'icons/site.webmanifest') }}">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Geo&display=swap" rel="stylesheet"> 
 </head>
 
 <body>
@@ -14,10 +20,17 @@
             <b>ScEViz</b> 
         </div>
 
-        <div class="schema">
-            <div id="cy"></div>
+        <div class="side-bar"></div>
+
+        <div class="schema-left">
+            <div id="cyl" class="cy"></div>
         </div>
+
+        <div class="divline"></div>
         
+        <div class="schema-right">
+            <div id="cyr" class="cy"></div>
+        </div>
 
         <div class="footer">
             <b>Universität Rostock</b> | Lehrstuhl für Datenbanken und Informationssysteme
@@ -27,8 +40,27 @@
     <script>
         var schema = JSON.parse('{{ schema | tojson }}');
 
-        var cy = cytoscape({
-        container: document.getElementById('cy'),
+        var node_style = {
+            selector: 'node',
+            style: {
+                shape: 'ellipse',
+                'background-color': '#81c784',
+                label: 'data(label)',
+                'height': 20,
+                'width': 20
+            }
+        }
+
+        var edge_style = {
+            selector: 'edge',
+            style: {
+                'curve-style': 'bezier',
+                'line-color': '#eaeded'
+            }
+        }
+
+        var cyl = cytoscape({
+        container: document.getElementById('cyl'),
         elements: schema,
         // styling and layout
         layout: {
@@ -36,16 +68,22 @@
             rankDir: 'LR'
         },
         style: [
-            {
-                selector: 'node',
-                style: {
-                    shape: 'circle',
-                    'background-color': 'green',
-                    label: 'data(label)'
-                }
-            }
+            node_style, edge_style
         ]
         });
+
+        var cyr = cytoscape({
+            container: document.getElementById('cyr'),
+            elements: schema,
+            // styling and layout
+            layout: {
+                name: 'dagre',
+                rankDir: 'LR'
+            },
+            style: [
+                node_style, edge_style
+            ]
+            });
     </script>
 </body>
 

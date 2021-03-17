@@ -20,7 +20,22 @@
             <b>ScEViz</b> 
         </div>
 
-        <div class="side-bar"></div>
+        <div class="side-bar">
+            <div style="padding: 16px;">
+                <h4>Label</h4>
+                <p id="label"></p>
+                <hr>
+                <h4>Type</h4>
+                <p id="type"></p>
+                <hr>
+                <h4>Description</h4>
+                <p id="description"></p>
+                <hr>
+                <h4>Content</h4>
+                <p id="content"></p>
+                <hr>
+            </div>
+        </div>
 
         <div class="schema-left">
             <div id="cyl" class="cy"></div>
@@ -70,6 +85,14 @@
         style: [
             node_style, edge_style
         ]
+        });
+
+        cyl.on('tap', 'node', function(evt){
+            var node = evt.target;
+            document.getElementById('label').innerHTML = node.data('label');
+            document.getElementById('type').innerHTML = node.data('type');
+            document.getElementById('description').innerHTML = node.data('description');
+            document.getElementById('content').innerHTML = node.data('content');
         });
 
         var cyr = cytoscape({

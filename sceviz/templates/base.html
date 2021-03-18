@@ -23,16 +23,16 @@
         <div class="side-bar">
             <div style="padding: 16px;">
                 <h4>Label</h4>
-                <p id="label"></p>
+                <p id="label">&nbsp;</p>
                 <hr>
                 <h4>Type</h4>
-                <p id="type"></p>
+                <p id="type">&nbsp;</p>
                 <hr>
                 <h4>Description</h4>
-                <p id="description"></p>
+                <p id="description">&nbsp;</p>
                 <hr>
                 <h4>Content</h4>
-                <p id="content"></p>
+                <p id="content">&nbsp;</p>
                 <hr>
             </div>
         </div>
@@ -91,8 +91,16 @@
             var node = evt.target;
             document.getElementById('label').innerHTML = node.data('label');
             document.getElementById('type').innerHTML = node.data('type');
-            document.getElementById('description').innerHTML = node.data('description');
-            document.getElementById('content').innerHTML = node.data('content');
+            var description = node.data('description');
+            if (description == null) {
+                description = '&nbsp;';
+            }
+            document.getElementById('description').innerHTML = description;
+            var content = node.data('content');
+            if (content == null) {
+                content = '&nbsp;';
+            }
+            document.getElementById('content').innerHTML = content;
         });
 
         var cyr = cytoscape({

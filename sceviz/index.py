@@ -4,7 +4,9 @@
 
 from flask import (Blueprint, render_template, url_for, current_app)
 
-import json
+from pandas import json_normalize
+
+import json, pprint
 
 bp = Blueprint('index', __name__)
 
@@ -153,8 +155,48 @@ def parse_schema(schema: dict,
                     parse_schema(elem[1], id, data, str(elem[0]))
         elif key in ['title','type','description']:
             continue
+        elif key == '$ref':
+            continue
         else:
             data.append(create_node(id, key, content=value))
             data.append(create_edge(edge_id, parent, id))
 
     return data
+
+def new_parse_schema(schema: dict):
+    schema = json_normalize(schema, sep='/',record_prefix='oneOf').to_dict('records')[0]
+    # TODO use flatten_json for this!
+    flat_schema = {}
+
+    for key, value in schema.items():
+        path = key.split('/')
+        path_len = len(path)
+
+        for i in range(path_len):
+            node_id = '/'.join(path[:i+1])
+
+            if i == path_len - 1:
+                flat_schema[node_id] = value
+            else:
+                flat_schema[node_id] = node_id
+
+    return flat_schema
+
+def resolve_lists(schema: dict):
+
+    for key, value in schema.items():
+        if isinstance(value, list):
+            for elem in value:
+                if isinstance(elem, dict):
+                    pass
+
+
+if __name__ == "__main__":
+    file = json.load(open('uploads/schema.json'))
+    pprint.pprint(new_parse_schema(file))
+
+
+
+
+        
+

@@ -6,7 +6,11 @@ from flask import (Blueprint, render_template, url_for, current_app)
 
 from pandas import json_normalize
 
-import json, pprint
+from flatten_json import flatten, flatten_preserve_lists
+
+from json import load
+
+from pprint import pprint
 
 bp = Blueprint('index', __name__)
 
@@ -31,7 +35,7 @@ def load_schema(path: str) -> dict:
             A nested dict containing JSON-Schema
         """
     with current_app.open_resource(path) as file:
-        schema = json.load(file)
+        schema = load(file)
         return schema
 
 
@@ -164,8 +168,7 @@ def parse_schema(schema: dict,
     return data
 
 def new_parse_schema(schema: dict):
-    schema = json_normalize(schema, sep='/',record_prefix='oneOf').to_dict('records')[0]
-    # TODO use flatten_json for this!
+    schema = flatten(schema,separator='/')
     flat_schema = {}
 
     for key, value in schema.items():
@@ -185,15 +188,23 @@ def new_parse_schema(schema: dict):
 def resolve_lists(schema: dict):
 
     for key, value in schema.items():
-        if isinstance(value, list):
-            for elem in value:
-                if isinstance(elem, dict):
-                    pass
+        path = key.split('/')
+        parent_path = '/'.join(path[:-1])
+        if path[-1].isdigit():
+            if isinstance(schema[parent_path],list):
+                schema[parent_path].append(value)
+                #del schema[]
+            else:
+                schema[parent_path] = [value]
+    
+    return schema
 
 
 if __name__ == "__main__":
-    file = json.load(open('uploads/schema.json'))
-    pprint.pprint(new_parse_schema(file))
+    file = load(open('uploads/schema.json'))
+    file = new_parse_schema(file)
+    file = resolve_lists(file)
+    pprint(file)
 
 
 

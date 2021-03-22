@@ -210,7 +210,7 @@ def convert_cytoscape(schema: dict):
     data = [{
         'data': {
             'id': '#',
-            'title': schema.pop('title','root'),
+            'label': schema.pop('title','root'),
             'type': schema.pop('type','object'),
             'description': schema.pop('description', None)
         }
@@ -222,7 +222,12 @@ def convert_cytoscape(schema: dict):
         if not path[:-1]:
             parent_path = '#'
         else:
-            parent_path = '#/' + '/'.join(path[:-1])
+            if path[:-1][-1].isdigit():
+                # If node is a list item we have to remove its number id from
+                # the parent path
+                parent_path = '#/' + '/'.join(path[:-2])
+            else:
+                parent_path = '#/' + '/'.join(path[:-1])
 
         if path[-1] == 'type':
             continue

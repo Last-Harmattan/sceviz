@@ -92,7 +92,7 @@ def create_edge(id: str, source: str, target: str) -> dict:
     return {'data': {'id': id, 'source': source, 'target': target}}
 
 
-def parse_schema(schema: dict,
+def dep_parse_schema(schema: dict,
                  parent: str = "#",
                  data: list = [],
                  index: str = "") -> list:
@@ -138,7 +138,7 @@ def parse_schema(schema: dict,
             
             data.append(create_node(id, node_label, node_type, description))
             data.append(create_edge(edge_id, parent, id))
-            parse_schema(value, id, data)
+            dep_parse_schema(value, id, data)
         elif isinstance(value, list):
             # If the child node is a list we have to handle that differently
             # depending on the list's items' type
@@ -156,7 +156,7 @@ def parse_schema(schema: dict,
             # ensure uniqueness.
             for elem in enumerate(value):
                 if isinstance(elem[1], dict):
-                    parse_schema(elem[1], id, data, str(elem[0]))
+                    dep_parse_schema(elem[1], id, data, str(elem[0]))
         elif key in ['title','type','description']:
             continue
         elif key == '$ref':
@@ -167,7 +167,7 @@ def parse_schema(schema: dict,
 
     return data
 
-def new_parse_schema(schema: dict):
+def flatten_schema(schema: dict):
     schema = flatten(schema,separator='/')
     flat_schema = {}
 
@@ -180,31 +180,91 @@ def new_parse_schema(schema: dict):
 
             if i == path_len - 1:
                 flat_schema[node_id] = value
+            elif path[-1] in ['$ref','$schema','$id']:
+                flat_schema[node_id] = value 
             else:
                 flat_schema[node_id] = node_id
 
     return flat_schema
 
-def resolve_lists(schema: dict):
 
-    for key, value in schema.items():
+def resolve_lists(schema: dict) -> dict:
+
+    for key, value in schema.copy().items():
         path = key.split('/')
         parent_path = '/'.join(path[:-1])
         if path[-1].isdigit():
             if isinstance(schema[parent_path],list):
                 schema[parent_path].append(value)
-                #del schema[]
+                del schema[key]
             else:
                 schema[parent_path] = [value]
+                del schema[key]
     
     return schema
 
 
+def convert_cytoscape(schema: dict):
+
+    # Adding the root node and removing it's annotations
+    data = [{
+        'data': {
+            'id': '#',
+            'title': schema.pop('title','root'),
+            'type': schema.pop('type','object'),
+            'description': schema.pop('description', None)
+        }
+    }]
+
+    for key, value in schema.items():
+        path = key.split('/')
+        
+        if not path[:-1]:
+            parent_path = '#'
+        else:
+            parent_path = '#/' + '/'.join(path[:-1])
+
+        if path[-1] == 'type':
+            continue
+
+        node = {'data': {
+            'id': '#/' + key,
+            'label': schema.get(key + '/title', path[-1]),
+            'type': schema.get(key + '/type', "JSON Schema Keyword"),
+            'description': schema.get(key + '/description', None)
+        }}
+
+        edge = {'data': {
+            'source': parent_path,
+            'target': '#/' + key
+        }}
+
+        if isinstance(value, list):
+            node['data']['content'] = value
+        elif key != value:
+            node['data']['content'] = value
+        else:
+            node['data']['content'] = None
+
+        data.append(node)
+        data.append(edge)
+    
+    return data
+
+
+def parse_schema(schema):
+    schema = flatten_schema(schema)
+    schema = resolve_lists(schema)
+    return convert_cytoscape(schema)
+
+
+
 if __name__ == "__main__":
     file = load(open('uploads/schema.json'))
-    file = new_parse_schema(file)
+    file = flatten_schema(file)
     file = resolve_lists(file)
-    pprint(file)
+    data = convert_cytoscape(file)
+    pprint(data)
 
 
 

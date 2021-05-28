@@ -140,7 +140,7 @@ def dep_parse_schema(schema: dict,
             data.append(create_edge(edge_id, parent, id))
             dep_parse_schema(value, id, data)
         elif isinstance(value, list):
-            # If the child node is a list we have to handle that differently
+            # If the child node is a list, we have to handle that differently
             # depending on the list's items' type
             content = None
 
@@ -256,10 +256,27 @@ def convert_cytoscape(schema: dict):
     
     return data
 
+def resolve_reference(schema: dict):
+    
+    for key, value in schema.copy().items():
+        path = key.split('/')
+        parent_path = '/'.join(path[:-1])
+
+        # If the node is not  a '$ref' than it shouldn't have a path as value
+        if value[0] == '#':
+            schema[key] = None
+
+        if path[-1] == '$ref':
+            del schema[key]
+            schema[parent_path] = value
+
+    return schema
+
 
 def parse_schema(schema):
     schema = flatten_schema(schema)
     schema = resolve_lists(schema)
+    schema = resolve_reference(schema)
     return convert_cytoscape(schema)
 
 
@@ -267,9 +284,12 @@ def parse_schema(schema):
 if __name__ == "__main__":
     file = load(open('uploads/schema.json'))
     file = flatten_schema(file)
+    pprint(file)
     file = resolve_lists(file)
+    file = resolve_reference(file)
+    #pprint(file)
     data = convert_cytoscape(file)
-    pprint(data)
+    # pprint(data)
 
 
 

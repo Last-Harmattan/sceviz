@@ -19,7 +19,7 @@ nav h1 { font-family: sans-serif; color:#5a5a5a6e; margin: 0;}
     display: grid;
     height: 100%;
     grid-template-columns: 15% 1fr 1fr 2px 1fr 1fr;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto 1fr 2px 15% auto;
 }
 .header {
     grid-column: 1 / span 6;
@@ -37,21 +37,33 @@ nav h1 { font-family: sans-serif; color:#5a5a5a6e; margin: 0;}
     grid-column: 5 / span 2;
     grid-row: 2;
 }
+
+.schema-evolution {
+    grid-column: 2 / span 6;
+    grid-row: 4
+}
+
 .divline {
     background-color: grey;
     grid-column: 4;
     grid-row: 2;
 }
 
+.hline {
+    background-color: grey;
+    grid-column: 2 / span 6;
+    grid-row: 3;
+}
+
 .side-bar {
     background-color: #eaeded;
     grid-column: 1;
-    grid-row: 2;
+    grid-row: 2 / span 4;
 }
 
 .footer {
     grid-column: 1 / span 6;
-    grid-row: 3;
+    grid-row: 5;
     background-color: #27ae60;
     color: white;
 }

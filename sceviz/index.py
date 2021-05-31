@@ -2,9 +2,14 @@
 # -*- coding: utf-8 -*-
 # Reads JSON-Schema and converts it to Cytoscape.js format
 
-from flask import (Blueprint, render_template, url_for, current_app)
+import os
+
+from flask import (Blueprint, render_template, url_for, redirect,
+                    flash, request, current_app)
 
 from pandas import json_normalize
+
+from werkzeug.utils import secure_filename
 
 from flatten_json import flatten, flatten_preserve_lists
 
@@ -15,8 +20,23 @@ from pprint import pprint
 bp = Blueprint('index', __name__)
 
 
-@bp.route('/')
+@bp.route('/',methods=['GET', 'POST'])
 def index():
+
+    if request.method == 'POST':
+        
+        if 'file' not in request.files:
+            flash('No file part!')
+            return redirect(request.url)
+        file = request.files['file']
+
+        if file.filename == '':
+            flash('No file selected!')
+            return redirect(request.url)
+        if file:
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+
     schema = parse_schema(load_schema('uploads/schema.json'))
     return render_template('base.html', schema=schema)
 

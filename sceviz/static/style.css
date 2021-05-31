@@ -28,7 +28,25 @@ nav h1 { font-family: sans-serif; color:#5a5a5a6e; margin: 0;}
     color:#f2f4f4;
     font-size: 30pt;
     font-family: 'Geo', sans-serif;
+    display: flex;
+    align-items: center;
 }
+.upload-button {
+    position: absolute;
+    right: 20px;
+}
+
+form {
+    display: flex;
+    margin: auto;
+    position: absolute;
+    right: 20px;
+}
+
+form input {
+    margin: auto;
+}
+
 .schema-left {
     grid-column: 2 / span 2;
     grid-row: 2;

@@ -1,7 +1,7 @@
 import os
 
 from flask import (
-    Flask, render_template
+    Flask, render_template, flash, request, redirect, url_for
 )
 
 def create_app(test_config=None):
@@ -10,6 +10,7 @@ def create_app(test_config=None):
     app.config.from_mapping(
         SECRET_KEY = 'dev',
         DATABASE = os.path.join(app.instance_path, 'sceviz.sqlite'),
+        UPLOAD_FOLDER = '/uploads'
     )
 
     if test_config is None:

@@ -5,7 +5,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.18.0/cytoscape.min.js" integrity="sha512-bg1QBgIk64XNmh8qAaxY2W6TKZ4/Q2sbPQLJ+1vhT3BD+DXXzAqhIbWdgeM82XWcbJKblEoSNhXiakf1NlWU3g==" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/dagre@0.7.4/dist/dagre.js"></script>
     <script src="{{ url_for('static', filename = 'node_modules/cytoscape-dagre/cytoscape-dagre.js') }}"></script>
-    <script src="{{ url_for('static', filename = 'node_modules/cytoscape-elk/cytoscape-elk.js') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css')}}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename = 'icons/apple-touch-icon.png') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename = 'icons/favicon-32x32.png') }}">
@@ -18,7 +17,11 @@
 <body>
     <div class="grid-container">
         <div class="header">
-            <b>ScEViz</b> 
+            <b>ScEViz</b>
+            <form method="post" enctype="multipart/form-data">
+                <input type="file" name="file">
+                <input type="submit" value="Upload">
+            </form>
         </div>
 
         <div class="side-bar">
@@ -138,6 +141,7 @@
             });
 
             cyr.on('tap', 'node', function(evt){
+                cyr.nodes().style('background-color', '#81c784');
                 var node = evt.target;
                 document.getElementById('label').innerHTML = node.data('label');
                 document.getElementById('type').innerHTML = node.data('type');
@@ -151,6 +155,11 @@
                     content = '&nbsp;';
                 }
                 document.getElementById('content').innerHTML = content;
+
+                if(content[0] === '#') {
+                    var nodes = cyr.nodes(`[id^="#/$def/award"]`);
+                    nodes.style('background-color','#7e387b');
+                }
             });
 
             cyr.autoungrabify(true);

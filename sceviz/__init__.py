@@ -8,9 +8,11 @@ def create_app(test_config=None):
     """Application Factory"""
     app = Flask(__name__,instance_relative_config=True)
     app.config.from_mapping(
-        SECRET_KEY = 'dev',
+        SECRET_KEY = b'y\t\xdf\xfa\x15\xb2\x1dKD\xe1|\xac\x18J \xe0L-\xe7\x1d\x9f?T[>\x0f4\xaa\xa71tG',
         DATABASE = os.path.join(app.instance_path, 'sceviz.sqlite'),
-        UPLOAD_FOLDER = '/uploads'
+        UPLOAD_PATH = 'sceviz/uploads',
+        MAX_CONTENT_LENGTH = 1024 * 1024,
+        UPLOAD_EXTENSIONS = ['.json'],
     )
 
     if test_config is None:

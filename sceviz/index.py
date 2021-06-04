@@ -4,8 +4,10 @@
 
 import os
 
+import secrets
+
 from flask import (Blueprint, render_template, url_for, redirect,
-                    flash, request, current_app)
+                    flash, request, current_app, abort, session)
 
 from pandas import json_normalize
 
@@ -17,28 +19,46 @@ from json import load
 
 from pprint import pprint
 
+
 bp = Blueprint('index', __name__)
 
 
-@bp.route('/',methods=['GET', 'POST'])
+@bp.route('/',methods=['GET'])
 def index():
 
-    if request.method == 'POST':
-        
-        if 'file' not in request.files:
-            flash('No file part!')
-            return redirect(request.url)
-        file = request.files['file']
+    if 'id' not in session:
+        session['id'] = secrets.token_urlsafe(16)
 
-        if file.filename == '':
-            flash('No file selected!')
-            return redirect(request.url)
-        if file:
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+    filename = session['id'] + '.json'
 
-    schema = parse_schema(load_schema('uploads/schema.json'))
+    try:
+        schema = parse_schema(load_schema(os.path.join(
+            'uploads',
+            filename
+        )))
+    except FileNotFoundError:
+        schema = parse_schema(load_schema(os.path.join(
+            'uploads',
+            'example.json'
+        )))
     return render_template('base.html', schema=schema)
+
+@bp.route('/',methods=['POST'])
+def upload_file():
+    uploaded_file = request.files['file']
+    filename = uploaded_file.filename
+
+    if filename != '':
+        file_ext = os.path.splitext(filename)[1]
+
+        if file_ext not in current_app.config['UPLOAD_EXTENSIONS']:
+            abort(400)
+
+        filename = session['id'] + '.json'
+        uploaded_file.save(os.path.join(current_app.config['UPLOAD_PATH'],
+                                        filename))
+    
+    return redirect(url_for('index'))
 
 
 def load_schema(path: str) -> dict:

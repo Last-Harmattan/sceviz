@@ -1,0 +1,32 @@
+{
+    "$schema" : "https://json-schema.org/draft/2020-12/schema",
+    "$id" : "http://example.com/movie.v2.json",
+    "title" : "Movie",
+    "description" : "An entry for a movie",
+    "type" : "object",
+    "properties" : {
+        "name" : { "type" : "string" },
+        "year" : { "type" : "integer" },
+        "regisseur" : {
+            "type" : ["string","array"],
+            "items" : { "type" : "string" }
+        },
+        "cinematographer" : { "type" : "string" },
+        "awards" : { "type": "array", "items" : { "$ref" : "#/$def/award" } },
+        "accolades" : { "type": "array", "items" : { "$ref" : "#/$def/award" } }
+    },
+    "$def" : {
+        "award" : {
+            "type" : "object",
+            "properties" : {
+                "name" : { "type" : "string" },
+                "category" : { "type" : "string" },
+                "received" : { "type" : "boolean" }
+            }
+        }
+    },
+    "oneOf" : [
+        { "required" : [ "name", "director", "awards" ] },
+        { "required" : [ "name", "director", "accolades" ] }
+    ]
+}

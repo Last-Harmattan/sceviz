@@ -6,6 +6,7 @@ from logging import INFO
 import os
 
 import secrets
+from typing import Tuple
 
 from flask import (Blueprint, render_template, url_for, redirect,
                     flash, request, current_app, abort, session)
@@ -82,7 +83,9 @@ def load_schemas(path: str)-> list:
     schemas = schemas['schemas']
 
     for schema in schemas:
-        data[schema['$id']] = parse_schema(schema)
+        data[schema[0]['$id']] = []
+        for entity in schema:
+            data[entity['$id']] += parse_schema(entity,entity['title'])
 
     return data
 
@@ -113,7 +116,7 @@ def load_evolution(path: str) -> dict:
 
     for index, schema in enumerate(evolution['schemas']):
         node = {"data": {
-            "id": schema['$id'],
+            "id": schema[0]['$id'],
             "label": f'v{index}'
         }}
 
@@ -125,7 +128,8 @@ def load_evolution(path: str) -> dict:
             'op': colors[operation['operation'].split(' ')[0]],
             'source': operation['source'],
             'target': operation['destination'],
-            'subject': node_from_operation(operation['operation'])
+            'subject': node_from_operation(operation['operation'])[0],
+            'issue': node_from_operation(operation['operation'])[1]
         }}
 
         data.append(edge)
@@ -133,22 +137,32 @@ def load_evolution(path: str) -> dict:
     return data
 
 
-def node_from_operation(op: str) -> str:
+def node_from_operation(op: str) -> Tuple[str,str]:
     op = op.split(' ')
 
     if op[0] in ['add','delete']:
         path = op[1].replace('.','/properties/')
         path = path.split('/')
-        path[0] = '#'
-        return '/'.join(path)
+        path[0] = '#' + path[0]
+
+        return ('/'.join(path),'')
     elif op[0] == 'rename':
         path = op[1].replace('.','/properties/')
         path = path.split('/')
-        path[0] = '#'
+        path[0] = '#' + path[0]
         path[-1] = op[3]
-        return '/'.join(path)
+
+        return ('/'.join(path),'')
     else:
-        return None
+        path_p = op[1].replace('.','/properties/')
+        path_p = path_p.split('/')
+        path_p[0] = '#' + path_p[0]
+
+        path_s = op[3].replace('.','/properties/')
+        path_s = path_s.split('/')
+        path_s[0] = '#' + path_s[0]
+
+        return ('/'.join(path_p),'/'.join(path_s))
 
 
 def parse_operation(op: str) -> str:
@@ -196,12 +210,12 @@ def resolve_lists(schema: dict) -> dict:
     return schema
 
 
-def convert_cytoscape(schema: dict):
+def convert_cytoscape(schema: dict, entity: str = ''):
 
     # Adding the root node and removing it's annotations
     data = [{
         'data': {
-            'id': '#',
+            'id': '#' + entity,
             'label': schema.pop('title','root'),
             'type': schema.pop('type','object'),
             'description': schema.pop('description', None)
@@ -212,21 +226,21 @@ def convert_cytoscape(schema: dict):
         path = key.split('/')
         
         if not path[:-1]:
-            parent_path = '#'
+            parent_path = '#' + entity
         else:
             if path[:-1][-1].isdigit():
                 # If node is a list item we have to remove its number id from
                 # the parent path
-                parent_path = '#/' + '/'.join(path[:-2])
+                parent_path = '#' + entity + '/' + '/'.join(path[:-2])
             else:
-                parent_path = '#/' + '/'.join(path[:-1])
+                parent_path = '#' + entity + '/' + '/'.join(path[:-1])
 
         if path[-1] == 'type':
             continue
 
         node = {'group': 'nodes',
         'data': {
-            'id': '#/' + key,
+            'id': '#' + entity + '/' + key,
             'label': schema.get(key + '/title', path[-1]),
             'type': schema.get(key + '/type', "JSON Schema Keyword"),
             'description': schema.get(key + '/description', None)
@@ -235,7 +249,7 @@ def convert_cytoscape(schema: dict):
         edge = {'group': 'edges',
         'data': {
             'source': parent_path,
-            'target': '#/' + key
+            'target': '#' + entity + '/' + key
         }}
 
         if isinstance(value, list):
@@ -250,7 +264,7 @@ def convert_cytoscape(schema: dict):
     
     return data
 
-def resolve_reference(schema: dict):
+def resolve_reference(schema: dict, entity: str = ''):
     
     for key, value in schema.copy().items():
         path = key.split('/')
@@ -262,16 +276,16 @@ def resolve_reference(schema: dict):
 
         if path[-1] == '$ref':
             del schema[key]
-            schema[parent_path] = value
+            schema[parent_path] = '#' + entity + value[1:]
 
     return schema
 
 
-def parse_schema(schema):
+def parse_schema(schema, entity=''):
     schema = flatten_schema(schema)
     schema = resolve_lists(schema)
-    schema = resolve_reference(schema)
-    return convert_cytoscape(schema)
+    schema = resolve_reference(schema,entity)
+    return convert_cytoscape(schema,entity)
 
 
 

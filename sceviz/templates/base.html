@@ -226,12 +226,23 @@
             switch (edge.data('operation').split(' ')[0]){
                 case 'add':
                     cyr.nodes(`[id^="${edge.data('subject')}"]`).style('background-color',edge.data('op'));
+                    break;
                 case 'rename':
                     cyr.nodes(`[id="${edge.data('subject')}"]`).style('background-color',edge.data('op'));
-                    console.log(edge.data('subject'));
+                    break;
                 case 'delete':
                     cyl.nodes(`[id^="${edge.data('subject')}"]`).style('background-color',edge.data('op'));
+                    break;
+                case 'copy':
+                    cyl.nodes(`[id^="${edge.data('subject')}"]`).style('background-color',edge.data('op'));
+                    cyr.nodes(`[id^="${edge.data('issue')}"]`).style('background-color',edge.data('op'));
+                    break;
+                case 'move':
+                    cyl.nodes(`[id^="${edge.data('subject')}"]`).style('background-color',edge.data('op'));
+                    cyr.nodes(`[id^="${edge.data('issue')}"]`).style('background-color',edge.data('op'));
                     console.log(edge.data('subject'));
+                    console.log(edge.data('op'));
+                    break;
             }
 
         });

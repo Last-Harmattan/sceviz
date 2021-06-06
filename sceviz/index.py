@@ -38,22 +38,22 @@ def index():
     filename = session['id'] + '.json'
 
     try:
-        schema = parse_schema(load_schema(os.path.join(
+        schemas = load_schemas(os.path.join(
             'uploads',
             filename
-        )))
+        ))
     except FileNotFoundError:
-        schema = parse_schema(load_schema(os.path.join(
+        schemas = load_schemas(os.path.join(
             'uploads',
-            'example.json'
-        )))
+            'evolution.json'
+        ))
 
     evolution = load_evolution(os.path.join(
         'uploads',
         'evolution.json'
     ))
 
-    return render_template('base.html', schema=schema, evolution=evolution)
+    return render_template('base.html', schemas=schemas, evolution=evolution)
 
 @bp.route('/',methods=['POST'])
 def upload_file():
@@ -124,12 +124,32 @@ def load_evolution(path: str) -> dict:
             'operation': parse_operation(operation['operation']),
             'op': colors[operation['operation'].split(' ')[0]],
             'source': operation['source'],
-            'target': operation['destination']
+            'target': operation['destination'],
+            'subject': node_from_operation(operation['operation'])
         }}
 
         data.append(edge)
 
     return data
+
+
+def node_from_operation(op: str) -> str:
+    op = op.split(' ')
+
+    if op[0] in ['add','delete']:
+        path = op[1].replace('.','/properties/')
+        path = path.split('/')
+        path[0] = '#'
+        return '/'.join(path)
+    elif op[0] == 'rename':
+        path = op[1].replace('.','/properties/')
+        path = path.split('/')
+        path[0] = '#'
+        path[-1] = op[3]
+        return '/'.join(path)
+    else:
+        return None
+
 
 def parse_operation(op: str) -> str:
     op = op.split(' ')
@@ -204,14 +224,16 @@ def convert_cytoscape(schema: dict):
         if path[-1] == 'type':
             continue
 
-        node = {'data': {
+        node = {'group': 'nodes',
+        'data': {
             'id': '#/' + key,
             'label': schema.get(key + '/title', path[-1]),
             'type': schema.get(key + '/type', "JSON Schema Keyword"),
             'description': schema.get(key + '/description', None)
         }}
 
-        edge = {'data': {
+        edge = {'group': 'edges',
+        'data': {
             'source': parent_path,
             'target': '#/' + key
         }}

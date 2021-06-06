@@ -71,9 +71,11 @@
                       "copy":"#96c5f7",
                       "move":"#2c1452"}
 
-        var schema = JSON.parse('{{ schema | tojson }}');
-        console.log(schema);
+        var schemas = JSON.parse('{{ schemas | tojson }}');
         var evolution = JSON.parse('{{ evolution | tojson}}');
+
+        var schema_left = null;
+        var schema_right = null;
 
         var node_style = {
             selector: 'node',
@@ -92,6 +94,11 @@
                 'curve-style': 'bezier',
                 'line-color': '#eaeded'
             }
+        }
+
+        var layout = {
+            name: 'dagre',
+            rankDir: 'LR'
         }
 
         var evo_edge_style = {
@@ -116,66 +123,74 @@
             ]
         });
 
+
         cye.on('tap', 'edge', function(evt){
             var edge = evt.target;
             document.getElementById('operation-panel').style.color = edge.data('op');
             document.getElementById('operation-panel').innerHTML = edge.data('operation');
-        });
 
-        cye.autoungrabify(true);
+            schema_left = schemas[edge.data('source')];
+            schema_right = schemas[edge.data('target')];
 
-        var cyl = cytoscape({
-        container: document.getElementById('cyl'),
-        elements: schema,
-        // styling and layout
-        layout: {
-            name: 'dagre',
-            rankDir: 'LR'
-        },
-        style: [
-            node_style, edge_style
-        ]
-        });
-
-        cyl.on('tap', 'node', function(evt){
-            cyl.nodes().style('background-color', '#81c784')
-            var node = evt.target;
-            document.getElementById('label').innerHTML = node.data('label');
-            document.getElementById('type').innerHTML = node.data('type');
-            var description = node.data('description');
-            if (description == null) {
-                description = '&nbsp;';
-            }
-            document.getElementById('description').innerHTML = description;
-            var content = node.data('content');
-            if (content == null) {
-                content = '&nbsp;';
-            }
-            document.getElementById('content').innerHTML = content;
-
-            if(content[0] === '#') {
-                var nodes = cyl.nodes(`[id^="#/$def/award"]`);
-                nodes.style('background-color','#7e387b');
-            }  
-        });
-
-        cyl.autoungrabify(true);
-
-        var cyr = cytoscape({
-            container: document.getElementById('cyr'),
-            elements: schema,
-            // styling and layout
-            layout: {
-                name: 'dagre',
-                rankDir: 'LR'
-            },
-            style: [
-                node_style, edge_style
-            ]
+            var cyl = cytoscape({
+                container: document.getElementById('cyl'),
+                elements: schema_left,
+                // styling and layout
+                layout: {
+                    name: 'dagre',
+                    rankDir: 'LR'
+                },
+                style: [
+                    node_style, edge_style
+                ]
             });
 
-            cyr.on('tap', 'node', function(evt){
-                cyr.nodes().style('background-color', '#81c784');
+            var cyr = cytoscape({
+                container: document.getElementById('cyr'),
+                elements: schema_right,
+                // styling and layout
+                layout: {
+                    name: 'dagre',
+                    rankDir: 'LR'
+                },
+                style: [
+                    node_style, edge_style
+                ]
+            });
+
+            cyl.on('tapstart', 'node', function(evt){
+                //cyl.nodes().style('background-color', '#81c784')
+                var node = evt.target;
+                document.getElementById('label').innerHTML = node.data('label');
+                document.getElementById('type').innerHTML = node.data('type');
+                var description = node.data('description');
+                if (description == null) {
+                    description = '&nbsp;';
+                }
+                document.getElementById('description').innerHTML = description;
+                var content = node.data('content');
+                if (content == null) {
+                    content = '&nbsp;';
+                }
+                document.getElementById('content').innerHTML = content;
+    
+                if(content[0] === '#') {
+                    var nodes = cyl.nodes(`[id^="${content}"]`);
+                    nodes.style('background-color','#7e387b');
+                }  
+            });
+
+            cyl.on('tapend','node', function(evt){
+                var node = evt.target;
+                var content = node.data('content');
+                if(content[0] === '#') {
+                    var nodes = cyl.nodes(`[id^="${content}"]`);
+                    nodes.style('background-color','#81c784');
+                }  
+            });
+
+            cyr.on('tapstart', 'node', function(evt){
+                //cyr.nodes().style('background-color', '#81c784');
                 var node = evt.target;
                 document.getElementById('label').innerHTML = node.data('label');
                 document.getElementById('type').innerHTML = node.data('type');
@@ -191,12 +206,37 @@
                 document.getElementById('content').innerHTML = content;
 
                 if(content[0] === '#') {
-                    var nodes = cyr.nodes(`[id^="#/$def/award"]`);
+                    var nodes = cyr.nodes(`[id^="${content}"]`);
                     nodes.style('background-color','#7e387b');
                 }
             });
 
+            cyr.on('tapend','node', function(evt){
+                var node = evt.target;
+                var content = node.data('content');
+                if(content[0] === '#') {
+                    var nodes = cyr.nodes(`[id^="${content}"]`);
+                    nodes.style('background-color','#81c784');
+                }  
+            });
+
+            cyl.autoungrabify(true);
             cyr.autoungrabify(true);
+
+            switch (edge.data('operation').split(' ')[0]){
+                case 'add':
+                    cyr.nodes(`[id^="${edge.data('subject')}"]`).style('background-color',edge.data('op'));
+                case 'rename':
+                    cyr.nodes(`[id="${edge.data('subject')}"]`).style('background-color',edge.data('op'));
+                    console.log(edge.data('subject'));
+                case 'delete':
+                    cyl.nodes(`[id^="${edge.data('subject')}"]`).style('background-color',edge.data('op'));
+                    console.log(edge.data('subject'));
+            }
+
+        });
+
+        cye.autoungrabify(true);
     </script>
 </body>
 

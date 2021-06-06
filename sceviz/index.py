@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Reads JSON-Schema and converts it to Cytoscape.js format
 
+from logging import INFO
 import os
 
 import secrets
@@ -22,6 +23,11 @@ from pprint import pprint
 
 bp = Blueprint('index', __name__)
 
+colors = {"delete":"#d1364e",
+          "add":"#609462",
+          "rename":"#f7c548",
+          "copy":"#96c5f7",
+          "move":"#2c1452"}
 
 @bp.route('/',methods=['GET'])
 def index():
@@ -41,7 +47,13 @@ def index():
             'uploads',
             'example.json'
         )))
-    return render_template('base.html', schema=schema)
+
+    evolution = load_evolution(os.path.join(
+        'uploads',
+        'evolution.json'
+    ))
+
+    return render_template('base.html', schema=schema, evolution=evolution)
 
 @bp.route('/',methods=['POST'])
 def upload_file():
@@ -61,6 +73,20 @@ def upload_file():
     return redirect(url_for('index'))
 
 
+def load_schemas(path: str)-> list:
+    data = {}
+
+    with current_app.open_resource(path) as file:
+        schemas = load(file)
+
+    schemas = schemas['schemas']
+
+    for schema in schemas:
+        data[schema['$id']] = parse_schema(schema)
+
+    return data
+
+
 def load_schema(path: str) -> dict:
     """Loads JSON-Schema from file and returns a dict
 
@@ -78,134 +104,40 @@ def load_schema(path: str) -> dict:
         schema = load(file)
         return schema
 
+def load_evolution(path: str) -> dict:
 
-def create_node(id: str, label: str = None, node_type: str = None,
-                description: str = None, content: str = None) -> dict:
-    """Creates a Cytoscape node
+    data = []
 
-        Parameters
-        ----------
-        id : str
-            Unique identifier in the form of an absolute path to that node
-        label : str, optional
-            A name for displaying
+    with current_app.open_resource(path) as file:
+        evolution = load(file)
 
-        Returns
-        -------
-        dict
-            A dict containing a Cytoscape node
+    for index, schema in enumerate(evolution['schemas']):
+        node = {"data": {
+            "id": schema['$id'],
+            "label": f'v{index}'
+        }}
 
-        Notes
-        -----
-        Cytoscape format:
-            { data: { id: 1, label: 'some label' } }
-    """
-    return {'data': {'id': id, 'label': label, 'type': node_type,
-            'description': description, 'content': content},
-            'grabbable': False}
+        data.append(node)
 
+    for operation in evolution['operations']:
+        edge = {"data": {
+            'operation': parse_operation(operation['operation']),
+            'op': colors[operation['operation'].split(' ')[0]],
+            'source': operation['source'],
+            'target': operation['destination']
+        }}
 
-def create_edge(id: str, source: str, target: str) -> dict:
-    """Creates a Cytoscape edge
-
-        Parameters
-        ----------
-        id : str
-            Unique ID consisting of the parents ID and the last part of the
-            child's ID
-        source : str
-            ID of the edge starting-node
-        target : str
-            ID of the edges ending-node
-
-        Returns
-        -------
-        dict
-            A dict containing a Cytoscape edge
-
-        Notes
-        -----
-        Edge: A---->B:
-            { data: { id: 'A->B', source: 'A', target: 'B'  } }
-    """
-
-    return {'data': {'id': id, 'source': source, 'target': target}}
-
-
-def dep_parse_schema(schema: dict,
-                 parent: str = "#",
-                 data: list = [],
-                 index: str = "") -> list:
-    """Takes JSON-Schema and converts it to cytoscape format
-
-        Parameters
-        ----------
-        schema : dict
-            Dictionary containing a JSON-Schema
-        parent : str
-            The parent node of the current layer. used for creating unique ids
-        data : list, optional
-            List for storing the Cytoscape data. Is returned at the end
-        index : str, optional
-            Used for ensuring uniqueness in arrays
-
-        Returns
-        -------
-        list of dict
-            A list dictionaries conforming to the Cytoscape format.
-    """
-    if not data:
-        # Data is empty i.e. current node is root
-        data.append(create_node('#',schema.get('title', 'root'),
-                                    schema.get('type', None),
-                                    schema.get('description', None)))
-
-    for key, value in schema.items():
-        # Referencing requires unique id for nodes, we use the path from root
-        id = parent + '/' + key + index
-        edge_id = parent + '->' + key + index
-
-        if isinstance(value, dict):
-            # If the child node is a dict we can call parse_schema() recursivly
-
-            # Check for annotations
-            node_type = value.get('type', 'JSON Schema')
-            description = value.get('description', None)
-            node_label = value.get('title', key)
-
-            if not isinstance(node_label, str):
-                node_label = key
-            
-            data.append(create_node(id, node_label, node_type, description))
-            data.append(create_edge(edge_id, parent, id))
-            dep_parse_schema(value, id, data)
-        elif isinstance(value, list):
-            # If the child node is a list, we have to handle that differently
-            # depending on the list's items' type
-            content = None
-
-            if key == 'type':
-                continue
-
-            if any( isinstance(elem,str) for elem in value ):
-                content = value
-
-            data.append(create_node(id, key, 'array', content=content))
-            data.append(create_edge(edge_id, parent, id))
-            # Arrays can lead to redundant ids and thus we number them to
-            # ensure uniqueness.
-            for elem in enumerate(value):
-                if isinstance(elem[1], dict):
-                    dep_parse_schema(elem[1], id, data, str(elem[0]))
-        elif key in ['title','type','description']:
-            continue
-        elif key == '$ref':
-            continue
-        else:
-            data.append(create_node(id, key, content=value))
-            data.append(create_edge(edge_id, parent, id))
+        data.append(edge)
 
     return data
+
+def parse_operation(op: str) -> str:
+    op = op.split(' ')
+
+    if op[0] in ['add','delete']:
+        return f'{op[0]} {op[1]}'
+    else:
+        return f'{op[0]} {op[1]} to {op[3]}'
 
 def flatten_schema(schema: dict):
     schema = flatten(schema,separator='/')
@@ -322,17 +254,5 @@ def parse_schema(schema):
 
 
 if __name__ == "__main__":
-    file = load(open('uploads/schema.json'))
-    file = flatten_schema(file)
-    pprint(file)
-    file = resolve_lists(file)
-    file = resolve_reference(file)
-    #pprint(file)
-    data = convert_cytoscape(file)
-    # pprint(data)
-
-
-
-
-        
-
+    #pprint(load_schemas('uploads/evolution.json'))
+    print('Simba!')

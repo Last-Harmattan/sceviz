@@ -54,8 +54,10 @@
         <div class="hline"></div>
 
         <div class="schema-evolution">
-            simba
+            <div id="evolution" class="cy"></div>
         </div>
+
+        <div class="operation-panel" id="operation-panel"></div>
 
         <div class="footer">
             <b>Universität Rostock</b> | Lehrstuhl für Datenbanken und Informationssysteme
@@ -63,13 +65,15 @@
     </div>
     
     <script>
-        var colors = {"Brick Red":"#d1364e",
-                      "Mantis":"#81c784",
-                      "Baby Blue Eyes":"#96c5f7",
-                      "Maize Crayola":"#f7c548",
-                      "Russian Violet":"#2c1452"}
+        var colors = {"delete":"#d1364e",
+                      "add":"#81c784",
+                      "rename":"#f7c548",
+                      "copy":"#96c5f7",
+                      "move":"#2c1452"}
 
         var schema = JSON.parse('{{ schema | tojson }}');
+        console.log(schema);
+        var evolution = JSON.parse('{{ evolution | tojson}}');
 
         var node_style = {
             selector: 'node',
@@ -89,6 +93,36 @@
                 'line-color': '#eaeded'
             }
         }
+
+        var evo_edge_style = {
+            selector: 'edge',
+            style: {
+                'curve-style': 'bezier',
+                'line-color': 'data(op)',
+                'target-arrow-color': 'data(op)',
+                'target-arrow-shape': 'triangle'
+            }
+        }
+
+        var cye = cytoscape({
+            container: document.getElementById('evolution'),
+            elements: evolution,
+            layout: {
+                name: 'dagre',
+                rankDir: 'LR'
+            },
+            style: [
+                node_style, evo_edge_style
+            ]
+        });
+
+        cye.on('tap', 'edge', function(evt){
+            var edge = evt.target;
+            document.getElementById('operation-panel').style.color = edge.data('op');
+            document.getElementById('operation-panel').innerHTML = edge.data('operation');
+        });
+
+        cye.autoungrabify(true);
 
         var cyl = cytoscape({
         container: document.getElementById('cyl'),

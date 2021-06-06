@@ -127,7 +127,7 @@
             ]
         }
     ],
-    "operators": [
+    "operations": [
         {
             "operation": "add movie.cinematographer = 'Andy Gaskill' where movie.title = 'The Lion King';",
             "source": "http://example.com/movie.v0.json",
@@ -135,7 +135,13 @@
         },
         {
             "operation": "rename movie.director to 'regisseur'",
-            "source": 
+            "source": "http://example.com/movie.v1.json",
+            "destination": "http://example.com/movie.v2.json"
+        },
+        {
+            "operation": "delete movie.year;",
+            "source": "http://example.com/movie.v2.json",
+            "destination": "http://example.com/movie.v3.json"
         }
     ]
 }
